@@ -18,7 +18,8 @@ import (
 	swagger "github.com/gofiber/swagger"
 	"go.uber.org/zap"
 
-	// Import domain handlers
+	// Import swagger docs - auto-generated
+	_ "eventix-api/docs"
 )
 
 // @title Eventix Ticket Booking API
@@ -125,68 +126,43 @@ func main() {
 func setupRoutes(api fiber.Router, cfg *config.Config) {
 	// Auth routes
 	auth := api.Group("/auth")
-	auth.Post("/register", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Register endpoint - to be implemented"})
-	})
-	auth.Post("/login", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Login endpoint - to be implemented"})
-	})
-	auth.Post("/refresh", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Refresh token endpoint - to be implemented"})
-	})
+	auth.Post("/register", RegisterHandler)
+	auth.Post("/login", LoginHandler)
+	auth.Post("/refresh", RefreshTokenHandler)
 
 	// Protected routes
 	protected := api.Group("", middleware.AuthMiddleware())
 
 	// User routes
 	users := protected.Group("/users")
-	users.Get("/me", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get current user - to be implemented"})
-	})
+	users.Get("/me", GetCurrentUserHandler)
 
-	// Event routes
+	// Event routes (public)
 	events := api.Group("/events")
-	events.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "List events - to be implemented"})
-	})
-	events.Get("/:id", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get event - to be implemented"})
-	})
+	events.Get("/", ListEventsHandler)
+	events.Get("/:id", GetEventHandler)
 
+	// Event routes (protected - organizer/admin only)
 	organizerEvents := protected.Group("/events", middleware.RoleMiddleware("organizer", "admin"))
-	organizerEvents.Post("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Create event - to be implemented"})
-	})
+	organizerEvents.Post("/", CreateEventHandler)
 
 	// Ticket routes
 	tickets := protected.Group("/tickets")
-	tickets.Post("/reserve", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Reserve ticket - to be implemented"})
-	})
-	tickets.Get("/my-tickets", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get my tickets - to be implemented"})
-	})
+	tickets.Post("/reserve", ReserveTicketHandler)
+	tickets.Get("/my-tickets", GetMyTicketsHandler)
 
 	// Order routes
 	orders := protected.Group("/orders")
-	orders.Post("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Create order - to be implemented"})
-	})
-	orders.Get("/my-orders", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get my orders - to be implemented"})
-	})
+	orders.Post("/", CreateOrderHandler)
+	orders.Get("/my-orders", GetMyOrdersHandler)
 
 	// Check-in routes
 	checkin := protected.Group("/checkin", middleware.RoleMiddleware("organizer", "admin"))
-	checkin.Post("/validate", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Validate QR code - to be implemented"})
-	})
+	checkin.Post("/validate", ValidateQRCodeHandler)
 
 	// Admin routes
 	admin := protected.Group("/admin", middleware.RoleMiddleware("admin"))
-	admin.Get("/stats", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get admin stats - to be implemented"})
-	})
+	admin.Get("/stats", GetAdminStatsHandler)
 
 	logger.Info("Routes registered successfully")
 }

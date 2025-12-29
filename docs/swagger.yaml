@@ -12,7 +12,780 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Eventix Ticket Booking API
   version: "1.0"
-paths: {}
+paths:
+  /admin/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get platform statistics and metrics (Admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  revenue:
+                    type: number
+                  total_events:
+                    type: integer
+                  total_tickets_sold:
+                    type: integer
+                  total_users:
+                    type: integer
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get admin statistics
+      tags:
+      - Admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  access_token:
+                    type: string
+                  expires_at:
+                    type: integer
+                  refresh_token:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: User login
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  access_token:
+                    type: string
+                  expires_at:
+                    type: integer
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            password:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                properties:
+                  email:
+                    type: string
+                  user_id:
+                    type: string
+                type: object
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: Register a new user
+      tags:
+      - Auth
+  /checkin/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate a ticket QR code for event check-in (Organizer/Admin only)
+      parameters:
+      - description: QR validation details
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            event_id:
+              type: string
+            qr_code:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  status:
+                    type: string
+                  ticket_id:
+                    type: string
+                type: object
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validate QR code
+      tags:
+      - Check-in
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all published events
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: array
+              pagination:
+                properties:
+                  limit:
+                    type: integer
+                  page:
+                    type: integer
+                  total_items:
+                    type: integer
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: List all events
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: Create a new event (Organizer/Admin only)
+      parameters:
+      - description: Event details
+        in: body
+        name: event
+        required: true
+        schema:
+          properties:
+            category:
+              type: string
+            description:
+              type: string
+            end_time:
+              type: string
+            location:
+              type: string
+            start_time:
+              type: string
+            title:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                type: object
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new event
+      tags:
+      - Events
+  /events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific event
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  category:
+                    type: string
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  start_time:
+                    type: string
+                  status:
+                    type: string
+                  title:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: Get event by ID
+      tags:
+      - Events
+  /orders:
+    post:
+      consumes:
+      - application/json
+      description: Create an order for reserved tickets
+      parameters:
+      - description: Order details
+        in: body
+        name: order
+        required: true
+        schema:
+          properties:
+            reservation_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            properties:
+              data:
+                properties:
+                  order_id:
+                    type: string
+                  payment_url:
+                    type: string
+                  total_amount:
+                    type: number
+                type: object
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create an order
+      tags:
+      - Orders
+  /orders/my-orders:
+    get:
+      consumes:
+      - application/json
+      description: Get all orders placed by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: array
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user's orders
+      tags:
+      - Orders
+  /tickets/my-tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get all tickets owned by the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: array
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user's tickets
+      tags:
+      - Tickets
+  /tickets/reserve:
+    post:
+      consumes:
+      - application/json
+      description: Reserve a ticket for an event (15-minute hold)
+      parameters:
+      - description: Ticket reservation details
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            quantity:
+              type: integer
+            tier_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  expires_at:
+                    type: string
+                  reservation_id:
+                    type: string
+                type: object
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reserve a ticket
+      tags:
+      - Tickets
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  id:
+                    type: string
+                  last_name:
+                    type: string
+                  role:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - Users
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.
