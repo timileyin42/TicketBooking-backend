@@ -112,6 +112,12 @@ func main() {
 	// API routes
 	api := app.Group(fmt.Sprintf("/api/%s", cfg.App.Version))
 
+	// Inject config into context so handlers can access it
+	api.Use(func(c *fiber.Ctx) error {
+		c.Locals("config", cfg)
+		return c.Next()
+	})
+
 	setupRoutes(api, cfg)
 
 	// 404 handler
@@ -143,6 +149,7 @@ func setupRoutes(api fiber.Router, cfg *config.Config) {
 	// Auth routes
 	auth := api.Group("/auth")
 	auth.Post("/register", RegisterHandler)
+	auth.Post("/verify-email", VerifyEmailHandler)
 	auth.Post("/login", LoginHandler)
 	auth.Post("/refresh", RefreshTokenHandler)
 

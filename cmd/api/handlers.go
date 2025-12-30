@@ -1,24 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"eventix-api/internal/models"
+	"eventix-api/internal/services"
+	"eventix-api/pkg/config"
 	"eventix-api/pkg/database"
 	"eventix-api/pkg/jwt"
+	"eventix-api/pkg/logger"
 	"eventix-api/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-// ============================================================================
 // REQUEST/RESPONSE DTOs
-// ============================================================================
 
 type RegisterRequest struct {
 	Email     string `json:"email" validate:"required,email"`
@@ -35,6 +36,10 @@ type LoginRequest struct {
 
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
+}
+
+type VerifyEmailRequest struct {
+	Token string `json:"token" validate:"required"`
 }
 
 type CreateEventRequest struct {
@@ -131,9 +136,7 @@ type OrderResponse struct {
 	CreatedAt   time.Time          `json:"created_at"`
 }
 
-// ============================================================================
 // AUTH HANDLERS
-// ============================================================================
 
 // RegisterHandler godoc
 // @Summary Register a new user
@@ -189,6 +192,16 @@ func RegisterHandler(c *fiber.Ctx) error {
 		return utils.InternalServerErrorResponse(c, "Failed to create user")
 	}
 
+	// Send verification email
+	cfg, _ := c.Locals("config").(*config.Config)
+	emailService := services.NewEmailService(&cfg.Email)
+	frontendURL := cfg.Server.FrontendURL
+
+	if err := emailService.SendVerificationEmail(user.ID, user.Email, user.FirstName, frontendURL); err != nil {
+		// Log error but don't fail registration
+		logger.Error("Failed to send verification email", zap.Error(err))
+	}
+
 	userResponse := UserResponse{
 		ID:            user.ID,
 		Email:         user.Email,
@@ -202,7 +215,7 @@ func RegisterHandler(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"success": true,
-		"message": "User registered successfully",
+		"message": "User registered successfully. Please check your email to verify your account.",
 		"data":    userResponse,
 	})
 }
@@ -322,9 +335,59 @@ func RefreshTokenHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
+// VerifyEmailHandler godoc
+// @Summary Verify email address
+// @Description Verify a user's email address using verification token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body VerifyEmailRequest true "Verification token"
+// @Success 200 {object} object{success=bool,message=string}
+// @Failure 400 {object} object{success=bool,error=object{code=string,message=string}}
+// @Router /auth/verify-email [post]
+func VerifyEmailHandler(c *fiber.Ctx) error {
+	var req VerifyEmailRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return utils.BadRequestResponse(c, "Invalid request body")
+	}
+
+	cfg, _ := c.Locals("config").(*config.Config)
+	emailService := services.NewEmailService(&cfg.Email)
+
+	// Verify token and get user ID
+	userID, err := emailService.VerifyEmailToken(req.Token)
+	if err != nil {
+		return utils.BadRequestResponse(c, err.Error())
+	}
+
+	// Update user's email_verified status
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return utils.NotFoundResponse(c, "User not found")
+	}
+
+	if user.EmailVerified {
+		return utils.BadRequestResponse(c, "Email already verified")
+	}
+
+	user.EmailVerified = true
+	if err := database.DB.Save(&user).Error; err != nil {
+		return utils.InternalServerErrorResponse(c, "Failed to update user")
+	}
+
+	// Send welcome email
+	if err := emailService.SendWelcomeEmail(user.Email, user.FirstName); err != nil {
+		logger.Error("Failed to send welcome email", zap.Error(err))
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"message": "Email verified successfully!  Welcome to Eventix!",
+	})
+}
+
 // USER HANDLERS
-// ============================================================================
 
 // GetCurrentUserHandler godoc
 // @Summary Get current user profile
@@ -366,9 +429,7 @@ func GetCurrentUserHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
 // EVENT HANDLERS
-// ============================================================================
 
 // ListEventsHandler godoc
 // @Summary List all events
@@ -648,9 +709,7 @@ func CreateEventHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
 // TICKET HANDLERS
-// ============================================================================
 
 // ReserveTicketHandler godoc
 // @Summary Reserve a ticket
@@ -677,40 +736,26 @@ func ReserveTicketHandler(c *fiber.Ctx) error {
 		return utils.BadRequestResponse(c, "Invalid tier ID")
 	}
 
-	// Get ticket tier
-	var tier models.TicketTier
-	if err := database.DB.Preload("Event").First(&tier, tierID).Error; err != nil {
-		return utils.NotFoundResponse(c, "Ticket tier not found")
+	uid, _ := uuid.Parse(userID)
+
+	// Create reservation using service
+	ticketService := services.NewTicketService()
+	reservation, err := ticketService.CreateReservation(uid, tierID, req.Quantity)
+	if err != nil {
+		return utils.BadRequestResponse(c, err.Error())
 	}
 
-	// Check availability
-	available := tier.TotalQuantity - tier.TotalQuantity - tier.AvailableQuantity
-	if available < req.Quantity {
-		return utils.BadRequestResponse(c, fmt.Sprintf("Only %d tickets available", available))
-	}
-
-	// Check event status
-	if tier.Event.Status != models.EventPublished {
-		return utils.BadRequestResponse(c, "Event is not available for booking")
-	}
-
-	// Create reservation (simplified - in production, use Redis TTL)
-	reservationID := uuid.New()
-	expiresAt := time.Now().Add(15 * time.Minute)
-
-	// Store reservation in cache (placeholder - implement with Redis)
-	// For now, return reservation details
 	return c.JSON(fiber.Map{
 		"success": true,
 		"message": "Tickets reserved successfully",
 		"data": fiber.Map{
-			"reservation_id": reservationID.String(),
-			"tier_id":        tier.ID.String(),
-			"quantity":       req.Quantity,
-			"unit_price":     tier.Price,
-			"total_price":    tier.Price * float64(req.Quantity),
-			"expires_at":     expiresAt.Format(time.RFC3339),
-			"user_id":        userID,
+			"reservation_id": reservation.ReservationID,
+			"tier_id":        reservation.TierID.String(),
+			"event_id":       reservation.EventID.String(),
+			"quantity":       reservation.Quantity,
+			"unit_price":     reservation.UnitPrice,
+			"total_price":    reservation.TotalPrice,
+			"expires_at":     reservation.ExpiresAt.Format(time.RFC3339),
 		},
 	})
 }
@@ -757,9 +802,7 @@ func GetMyTicketsHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
 // ORDER HANDLERS
-// ============================================================================
 
 // CreateOrderHandler godoc
 // @Summary Create an order
@@ -781,32 +824,70 @@ func CreateOrderHandler(c *fiber.Ctx) error {
 		return utils.BadRequestResponse(c, "Invalid request body")
 	}
 
-	// In a real app, validate reservation from cache
-	// For now, create a simplified order
 	uid, _ := uuid.Parse(userID)
+	ticketService := services.NewTicketService()
 
+	// Get and validate reservation
+	reservation, err := ticketService.GetReservation(req.ReservationID)
+	if err != nil {
+		return utils.BadRequestResponse(c, "Reservation not found or expired")
+	}
+
+	// Verify ownership
+	if reservation.UserID != uid {
+		return utils.ForbiddenResponse(c, "This reservation belongs to another user")
+	}
+
+	// Create order
 	order := models.Order{
 		UserID:      uid,
-		TotalAmount: 0, // Will be calculated based on tickets
+		TotalAmount: reservation.TotalPrice,
+		Currency:    "USD",
 		Status:      models.OrderPending,
 	}
 
-	// This is simplified - in production, create from reservation
-	if err := database.DB.Create(&order).Error; err != nil {
+	// Start transaction
+	tx := database.DB.Begin()
+	if err := tx.Create(&order).Error; err != nil {
+		tx.Rollback()
 		return utils.InternalServerErrorResponse(c, "Failed to create order")
 	}
 
+	// Create tickets
+	tickets, err := ticketService.CreateTicketsFromOrder(
+		order.ID,
+		reservation.TierID,
+		uid,
+		reservation.Quantity,
+	)
+	if err != nil {
+		tx.Rollback()
+		return utils.InternalServerErrorResponse(c, err.Error())
+	}
+
+	// Process payment (simplified - mark as paid immediately)
+	if err := ticketService.ProcessOrderPayment(order.ID); err != nil {
+		tx.Rollback()
+		return utils.InternalServerErrorResponse(c, "Payment processing failed")
+	}
+
+	tx.Commit()
+
+	// Delete reservation from Redis
+	ticketService.DeleteReservation(req.ReservationID)
+
+	// Prepare response
 	orderResponse := OrderResponse{
 		ID:          order.ID,
 		TotalAmount: order.TotalAmount,
-		Status:      order.Status,
-		TicketCount: 0,
+		Status:      models.OrderPaid,
+		TicketCount: len(tickets),
 		CreatedAt:   order.CreatedAt,
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"success": true,
-		"message": "Order created successfully",
+		"message": "Order created and paid successfully",
 		"data":    orderResponse,
 	})
 }
@@ -827,6 +908,7 @@ func GetMyOrdersHandler(c *fiber.Ctx) error {
 	uid, _ := uuid.Parse(userID)
 	var orders []models.Order
 	if err := database.DB.Where("user_id = ?", uid).
+		Preload("Tickets").
 		Order("created_at DESC").
 		Find(&orders).Error; err != nil {
 		return utils.InternalServerErrorResponse(c, "Failed to fetch orders")
@@ -838,7 +920,7 @@ func GetMyOrdersHandler(c *fiber.Ctx) error {
 			ID:          order.ID,
 			TotalAmount: order.TotalAmount,
 			Status:      order.Status,
-			TicketCount: 0, // Count tickets
+			TicketCount: len(order.Tickets),
 			CreatedAt:   order.CreatedAt,
 		}
 	}
@@ -849,9 +931,7 @@ func GetMyOrdersHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
 // CHECKIN HANDLERS
-// ============================================================================
 
 // ValidateQRCodeHandler godoc
 // @Summary Validate QR code
@@ -877,43 +957,20 @@ func ValidateQRCodeHandler(c *fiber.Ctx) error {
 		return utils.BadRequestResponse(c, "Invalid event ID")
 	}
 
-	// Find ticket by QR code
-	var ticket models.Ticket
-	if err := database.DB.Where("qr_code = ?", req.QRCode).
-		Preload("Tier").
-		Preload("Tier.Event").
-		First(&ticket).Error; err != nil {
-		return utils.NotFoundResponse(c, "Invalid QR code")
+	validatorID, _ := uuid.Parse(c.Locals("user_id").(string))
+	ticketService := services.NewTicketService()
+
+	// Validate ticket
+	ticket, err := ticketService.ValidateTicketForCheckin(req.QRCode, eventID)
+	if err != nil {
+		return utils.BadRequestResponse(c, err.Error())
 	}
 
-	// Verify event matches
-	if ticket.Tier.EventID != eventID {
-		return utils.BadRequestResponse(c, "QR code is not for this event")
+	// Check in ticket
+	checkin, err := ticketService.CheckInTicket(ticket, validatorID, eventID)
+	if err != nil {
+		return utils.InternalServerErrorResponse(c, err.Error())
 	}
-
-	// Check if already checked in
-	if ticket.Status == models.TicketUsed {
-		return utils.BadRequestResponse(c, "Ticket already checked in")
-	}
-
-	// Check if ticket is valid
-	if ticket.Status != models.TicketActive {
-		return utils.BadRequestResponse(c, fmt.Sprintf("Ticket is %s", ticket.Status))
-	}
-
-	// Update ticket status
-	ticket.Status = models.TicketUsed
-	if err := database.DB.Save(&ticket).Error; err != nil {
-		return utils.InternalServerErrorResponse(c, "Failed to update ticket")
-	}
-
-	// Create check-in record
-	checkin := models.Checkin{
-		TicketID:  ticket.ID,
-		ScannedAt: time.Now(),
-		ScannedBy: uuid.MustParse(c.Locals("user_id").(string)),
-	}
-	database.DB.Create(&checkin)
 
 	return c.JSON(fiber.Map{
 		"success": true,
@@ -926,9 +983,7 @@ func ValidateQRCodeHandler(c *fiber.Ctx) error {
 	})
 }
 
-// ============================================================================
 // ADMIN HANDLERS
-// ============================================================================
 
 // GetAdminStatsHandler godoc
 // @Summary Get admin statistics

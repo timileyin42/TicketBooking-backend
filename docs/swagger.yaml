@@ -221,6 +221,13 @@ definitions:
     - event_id
     - qr_code
     type: object
+  cmd_api.VerifyEmailRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
   eventix-api_internal_models.EventCategory:
     enum:
     - music
@@ -505,6 +512,47 @@ paths:
                 type: boolean
             type: object
       summary: Register a new user
+      tags:
+      - Auth
+  /auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: Verify a user's email address using verification token
+      parameters:
+      - description: Verification token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/cmd_api.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                type: object
+              success:
+                type: boolean
+            type: object
+      summary: Verify email address
       tags:
       - Auth
   /checkin/validate:

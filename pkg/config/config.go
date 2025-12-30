@@ -35,15 +35,15 @@ type AppConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host            string
-	Port            int
-	User            string
-	Password        string
-	Name            string
-	SSLMode         string
-	MaxConnections  int
-	MaxIdleConns    int
-	MaxLifetime     time.Duration
+	Host           string
+	Port           int
+	User           string
+	Password       string
+	Name           string
+	SSLMode        string
+	MaxConnections int
+	MaxIdleConns   int
+	MaxLifetime    time.Duration
 }
 
 type RedisConfig struct {
@@ -76,18 +76,18 @@ type PaymentConfig struct {
 }
 
 type KafkaConfig struct {
-	Brokers              []string
-	GroupID              string
-	TopicPayments        string
-	TopicNotifications   string
-	TopicCheckins        string
+	Brokers            []string
+	GroupID            string
+	TopicPayments      string
+	TopicNotifications string
+	TopicCheckins      string
 }
 
 type RabbitMQConfig struct {
-	URL                      string
-	Exchange                 string
-	QueuePayments            string
-	QueueNotifications       string
+	URL                string
+	Exchange           string
+	QueuePayments      string
+	QueueNotifications string
 }
 
 type S3Config struct {
@@ -107,21 +107,22 @@ type EmailConfig struct {
 	FromEmail    string
 	FromName     string
 	SendGridKey  string
+	ResendAPIKey string
 }
 
 type ServerConfig struct {
-	Port            int
-	FrontendURL     string
-	AdminURL        string
-	PrometheusPort  int
+	Port              int
+	FrontendURL       string
+	AdminURL          string
+	PrometheusPort    int
 	PrometheusEnabled bool
 }
 
 type LimitsConfig struct {
-	RateLimitRequests         int
-	RateLimitWindow           time.Duration
-	TicketReservationTimeout  time.Duration
-	MaxTicketsPerOrder        int
+	RateLimitRequests        int
+	RateLimitWindow          time.Duration
+	TicketReservationTimeout time.Duration
+	MaxTicketsPerOrder       int
 }
 
 type CORSConfig struct {
@@ -146,15 +147,15 @@ func Load() (*Config, error) {
 			LogFormat:   getEnv("LOG_FORMAT", "json"),
 		},
 		Database: DatabaseConfig{
-			Host:            getEnv("DB_HOST", "localhost"),
-			Port:            getEnvAsInt("DB_PORT", 5432),
-			User:            getEnv("DB_USER", "postgres"),
-			Password:        getEnv("DB_PASSWORD", "postgres"),
-			Name:            getEnv("DB_NAME", "ticket_booking"),
-			SSLMode:         getEnv("DB_SSL_MODE", "disable"),
-			MaxConnections:  getEnvAsInt("DB_MAX_CONNECTIONS", 100),
-			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNECTIONS", 10),
-			MaxLifetime:     getEnvAsDuration("DB_MAX_LIFETIME", 3600*time.Second),
+			Host:           getEnv("DB_HOST", "localhost"),
+			Port:           getEnvAsInt("DB_PORT", 5432),
+			User:           getEnv("DB_USER", "postgres"),
+			Password:       getEnv("DB_PASSWORD", "postgres"),
+			Name:           getEnv("DB_NAME", "ticket_booking"),
+			SSLMode:        getEnv("DB_SSL_MODE", "disable"),
+			MaxConnections: getEnvAsInt("DB_MAX_CONNECTIONS", 100),
+			MaxIdleConns:   getEnvAsInt("DB_MAX_IDLE_CONNECTIONS", 10),
+			MaxLifetime:    getEnvAsDuration("DB_MAX_LIFETIME", 3600*time.Second),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),
@@ -210,6 +211,7 @@ func Load() (*Config, error) {
 			FromEmail:    getEnv("SMTP_FROM_EMAIL", "noreply@eventix.com"),
 			FromName:     getEnv("SMTP_FROM_NAME", "Eventix"),
 			SendGridKey:  getEnv("SENDGRID_API_KEY", ""),
+			ResendAPIKey: getEnv("RESEND_API_KEY", ""),
 		},
 		Server: ServerConfig{
 			Port:              getEnvAsInt("PORT", 8080),
@@ -290,7 +292,7 @@ func getEnvAsSlice(key string, defaultValue []string) []string {
 	if valueStr == "" {
 		return defaultValue
 	}
-	
+
 	var result []string
 	for _, v := range splitString(valueStr, ",") {
 		if trimmed := trimSpace(v); trimmed != "" {
@@ -320,14 +322,14 @@ func splitString(s, sep string) []string {
 func trimSpace(s string) string {
 	start := 0
 	end := len(s)
-	
+
 	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n') {
 		start++
 	}
-	
+
 	for end > start && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n') {
 		end--
 	}
-	
+
 	return s[start:end]
 }
