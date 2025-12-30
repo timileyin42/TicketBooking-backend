@@ -1,22 +1,23 @@
 package middleware
 
 import (
+	"eventix-api/pkg/config"
+	"eventix-api/pkg/logger"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"eventix-api/pkg/config"
-	"eventix-api/pkg/logger"
 	"go.uber.org/zap"
 )
 
 // CORS creates a CORS middleware
 func CORS(cfg *config.CORSConfig) fiber.Handler {
 	return cors.New(cors.Config{
-		AllowOrigins:     joinStrings(cfg.AllowedOrigins, ","),
-		AllowMethods:     joinStrings(cfg.AllowedMethods, ","),
-		AllowHeaders:     joinStrings(cfg.AllowedHeaders, ","),
-		AllowCredentials: true,
-		ExposeHeaders:    "Content-Length,Content-Type",
+		AllowOrigins:     "*", // Allow all origins in development
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Requested-With",
+		AllowCredentials: false, // Must be false when using wildcard origin
+		ExposeHeaders:    "Content-Length,Content-Type,Authorization",
 		MaxAge:           86400,
 	})
 }

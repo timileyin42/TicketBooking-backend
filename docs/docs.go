@@ -27,7 +27,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Get platform statistics and metrics (Admin only)",
@@ -48,21 +48,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "revenue": {
-                                            "type": "number"
-                                        },
-                                        "total_events": {
-                                            "type": "integer"
-                                        },
-                                        "total_tickets_sold": {
-                                            "type": "integer"
-                                        },
-                                        "total_users": {
-                                            "type": "integer"
-                                        }
-                                    }
+                                    "type": "object"
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -137,15 +123,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.LoginRequest"
                         }
                     }
                 ],
@@ -156,18 +134,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "access_token": {
-                                            "type": "string"
-                                        },
-                                        "expires_at": {
-                                            "type": "integer"
-                                        },
-                                        "refresh_token": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.TokenResponse"
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -242,12 +209,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "refresh_token": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -263,8 +225,11 @@ const docTemplate = `{
                                         "access_token": {
                                             "type": "string"
                                         },
-                                        "expires_at": {
+                                        "expires_in": {
                                             "type": "integer"
+                                        },
+                                        "token_type": {
+                                            "type": "string"
                                         }
                                     }
                                 },
@@ -319,21 +284,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "email": {
-                                    "type": "string"
-                                },
-                                "first_name": {
-                                    "type": "string"
-                                },
-                                "last_name": {
-                                    "type": "string"
-                                },
-                                "password": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.RegisterRequest"
                         }
                     }
                 ],
@@ -344,15 +295,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "email": {
-                                            "type": "string"
-                                        },
-                                        "user_id": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.UserResponse"
                                 },
                                 "message": {
                                     "type": "string"
@@ -414,7 +357,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Validate a ticket QR code for event check-in (Organizer/Admin only)",
@@ -435,15 +378,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "event_id": {
-                                    "type": "string"
-                                },
-                                "qr_code": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.ValidateQRRequest"
                         }
                     }
                 ],
@@ -454,15 +389,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string"
-                                        },
-                                        "ticket_id": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "type": "object"
                                 },
                                 "message": {
                                     "type": "string"
@@ -575,6 +502,12 @@ const docTemplate = `{
                         "description": "Filter by category",
                         "name": "category",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by status",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -584,7 +517,10 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "array"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/cmd_api.EventResponse"
+                                    }
                                 },
                                 "pagination": {
                                     "type": "object",
@@ -595,7 +531,7 @@ const docTemplate = `{
                                         "page": {
                                             "type": "integer"
                                         },
-                                        "total_items": {
+                                        "total": {
                                             "type": "integer"
                                         }
                                     }
@@ -611,7 +547,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Create a new event (Organizer/Admin only)",
@@ -632,27 +568,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "category": {
-                                    "type": "string"
-                                },
-                                "description": {
-                                    "type": "string"
-                                },
-                                "end_time": {
-                                    "type": "string"
-                                },
-                                "location": {
-                                    "type": "string"
-                                },
-                                "start_time": {
-                                    "type": "string"
-                                },
-                                "title": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.CreateEventRequest"
                         }
                     }
                 ],
@@ -663,15 +579,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {
-                                            "type": "string"
-                                        },
-                                        "title": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.EventResponse"
                                 },
                                 "message": {
                                     "type": "string"
@@ -780,27 +688,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "category": {
-                                            "type": "string"
-                                        },
-                                        "description": {
-                                            "type": "string"
-                                        },
-                                        "id": {
-                                            "type": "string"
-                                        },
-                                        "start_time": {
-                                            "type": "string"
-                                        },
-                                        "status": {
-                                            "type": "string"
-                                        },
-                                        "title": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.EventResponse"
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -837,7 +725,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Create an order for reserved tickets",
@@ -858,12 +746,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "reservation_id": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.CreateOrderRequest"
                         }
                     }
                 ],
@@ -874,18 +757,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "order_id": {
-                                            "type": "string"
-                                        },
-                                        "payment_url": {
-                                            "type": "string"
-                                        },
-                                        "total_amount": {
-                                            "type": "number"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.OrderResponse"
                                 },
                                 "message": {
                                     "type": "string"
@@ -947,7 +819,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Get all orders placed by the authenticated user",
@@ -968,7 +840,10 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "array"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/cmd_api.OrderResponse"
+                                    }
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -1005,7 +880,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Get all tickets owned by the authenticated user",
@@ -1026,7 +901,10 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "array"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/cmd_api.TicketResponse"
+                                    }
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -1063,7 +941,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Reserve a ticket for an event (15-minute hold)",
@@ -1084,15 +962,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "quantity": {
-                                    "type": "integer"
-                                },
-                                "tier_id": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/cmd_api.ReserveTicketRequest"
                         }
                     }
                 ],
@@ -1173,7 +1043,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "BearerAuth": []
+                        "OAuth2Password": []
                     }
                 ],
                 "description": "Get authenticated user's profile information",
@@ -1194,24 +1064,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "email": {
-                                            "type": "string"
-                                        },
-                                        "first_name": {
-                                            "type": "string"
-                                        },
-                                        "id": {
-                                            "type": "string"
-                                        },
-                                        "last_name": {
-                                            "type": "string"
-                                        },
-                                        "role": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/definitions/cmd_api.UserResponse"
                                 },
                                 "success": {
                                     "type": "boolean"
@@ -1245,12 +1098,419 @@ const docTemplate = `{
             }
         }
     },
+    "definitions": {
+        "cmd_api.CreateEventRequest": {
+            "type": "object",
+            "required": [
+                "category",
+                "description",
+                "end_time",
+                "location",
+                "max_attendees",
+                "start_time",
+                "ticket_tiers",
+                "title"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "max_attendees": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "ticket_tiers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/cmd_api.TicketTierReq"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.CreateOrderRequest": {
+            "type": "object",
+            "required": [
+                "reservation_id"
+            ],
+            "properties": {
+                "reservation_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.EventResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/eventix-api_internal_models.EventCategory"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "max_attendees": {
+                    "type": "integer"
+                },
+                "organizer_id": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/eventix-api_internal_models.EventStatus"
+                },
+                "ticket_tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cmd_api.TicketTierResponse"
+                    }
+                },
+                "tickets_sold": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.OrderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/eventix-api_internal_models.OrderStatus"
+                },
+                "ticket_count": {
+                    "type": "integer"
+                },
+                "total_amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "cmd_api.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "last_name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.ReserveTicketRequest": {
+            "type": "object",
+            "required": [
+                "quantity",
+                "tier_id"
+            ],
+            "properties": {
+                "quantity": {
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
+                },
+                "tier_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.TicketResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "string"
+                },
+                "event_title": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "qr_code": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/eventix-api_internal_models.TicketStatus"
+                },
+                "tier_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.TicketTierReq": {
+            "type": "object",
+            "required": [
+                "name",
+                "price",
+                "quantity"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "cmd_api.TicketTierResponse": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "sold": {
+                    "type": "integer"
+                }
+            }
+        },
+        "cmd_api.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "cmd_api.ValidateQRRequest": {
+            "type": "object",
+            "required": [
+                "event_id",
+                "qr_code"
+            ],
+            "properties": {
+                "event_id": {
+                    "type": "string"
+                },
+                "qr_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "eventix-api_internal_models.EventCategory": {
+            "type": "string",
+            "enum": [
+                "music",
+                "sports",
+                "arts",
+                "technology",
+                "business",
+                "education",
+                "other"
+            ],
+            "x-enum-varnames": [
+                "CategoryMusic",
+                "CategorySports",
+                "CategoryArts",
+                "CategoryTechnology",
+                "CategoryBusiness",
+                "CategoryEducation",
+                "CategoryOther"
+            ]
+        },
+        "eventix-api_internal_models.EventStatus": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "under_review",
+                "published",
+                "active",
+                "completed",
+                "cancelled"
+            ],
+            "x-enum-varnames": [
+                "EventDraft",
+                "EventUnderReview",
+                "EventPublished",
+                "EventActive",
+                "EventCompleted",
+                "EventCancelled"
+            ]
+        },
+        "eventix-api_internal_models.OrderStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "paid",
+                "failed",
+                "cancelled",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "OrderPending",
+                "OrderPaid",
+                "OrderFailed",
+                "OrderCancelled",
+                "OrderRefunded"
+            ]
+        },
+        "eventix-api_internal_models.TicketStatus": {
+            "type": "string",
+            "enum": [
+                "reserved",
+                "active",
+                "used",
+                "cancelled",
+                "refunded"
+            ],
+            "x-enum-varnames": [
+                "TicketReserved",
+                "TicketActive",
+                "TicketUsed",
+                "TicketCancelled",
+                "TicketRefunded"
+            ]
+        }
+    },
     "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "/api/v1/auth/login",
+            "scopes": {
+                "read": "Grants read access",
+                "write": "Grants write access"
+            }
         }
     }
 }`

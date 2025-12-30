@@ -35,6 +35,48 @@ func GenerateRandomString(length int) (string, error) {
 	return base64.URLEncoding.EncodeToString(bytes)[:length], nil
 }
 
+// IsValidEmail validates email format
+func IsValidEmail(email string) bool {
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
+}
+
+// IsValidPassword validates password strength
+// Requires: at least 8 characters, 1 uppercase, 1 lowercase, 1 number
+func IsValidPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+
+	return hasUpper && hasLower && hasNumber
+}
+
+// IsValidPhone validates phone number format (basic validation)
+func IsValidPhone(phone string) bool {
+	// Remove common separators
+	cleaned := strings.ReplaceAll(phone, "-", "")
+	cleaned = strings.ReplaceAll(cleaned, " ", "")
+	cleaned = strings.ReplaceAll(cleaned, "(", "")
+	cleaned = strings.ReplaceAll(cleaned, ")", "")
+	cleaned = strings.ReplaceAll(cleaned, "+", "")
+
+	// Check if remaining chars are digits and length is reasonable
+	if len(cleaned) < 7 || len(cleaned) > 15 { // A bit more lenient than ValidatePhone
+		return false
+	}
+
+	for _, char := range cleaned {
+		if !unicode.IsDigit(char) {
+			return false
+		}
+	}
+	return true
+}
+
 // ValidateEmail validates an email address
 func ValidateEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)

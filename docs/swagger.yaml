@@ -1,4 +1,288 @@
 basePath: /api/v1
+definitions:
+  cmd_api.CreateEventRequest:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      end_time:
+        type: string
+      location:
+        type: string
+      max_attendees:
+        type: integer
+      start_time:
+        type: string
+      ticket_tiers:
+        items:
+          $ref: '#/definitions/cmd_api.TicketTierReq'
+        minItems: 1
+        type: array
+      title:
+        type: string
+    required:
+    - category
+    - description
+    - end_time
+    - location
+    - max_attendees
+    - start_time
+    - ticket_tiers
+    - title
+    type: object
+  cmd_api.CreateOrderRequest:
+    properties:
+      reservation_id:
+        type: string
+    required:
+    - reservation_id
+    type: object
+  cmd_api.EventResponse:
+    properties:
+      category:
+        $ref: '#/definitions/eventix-api_internal_models.EventCategory'
+      created_at:
+        type: string
+      description:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: string
+      location:
+        type: string
+      max_attendees:
+        type: integer
+      organizer_id:
+        type: string
+      start_time:
+        type: string
+      status:
+        $ref: '#/definitions/eventix-api_internal_models.EventStatus'
+      ticket_tiers:
+        items:
+          $ref: '#/definitions/cmd_api.TicketTierResponse'
+        type: array
+      tickets_sold:
+        type: integer
+      title:
+        type: string
+    type: object
+  cmd_api.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  cmd_api.OrderResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/eventix-api_internal_models.OrderStatus'
+      ticket_count:
+        type: integer
+      total_amount:
+        type: number
+    type: object
+  cmd_api.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  cmd_api.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
+  cmd_api.ReserveTicketRequest:
+    properties:
+      quantity:
+        maximum: 10
+        minimum: 1
+        type: integer
+      tier_id:
+        type: string
+    required:
+    - quantity
+    - tier_id
+    type: object
+  cmd_api.TicketResponse:
+    properties:
+      created_at:
+        type: string
+      event_id:
+        type: string
+      event_title:
+        type: string
+      id:
+        type: string
+      qr_code:
+        type: string
+      status:
+        $ref: '#/definitions/eventix-api_internal_models.TicketStatus'
+      tier_name:
+        type: string
+    type: object
+  cmd_api.TicketTierReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        minimum: 0
+        type: number
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - name
+    - price
+    - quantity
+    type: object
+  cmd_api.TicketTierResponse:
+    properties:
+      available:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      sold:
+        type: integer
+    type: object
+  cmd_api.TokenResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  cmd_api.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      phone:
+        type: string
+      role:
+        type: string
+    type: object
+  cmd_api.ValidateQRRequest:
+    properties:
+      event_id:
+        type: string
+      qr_code:
+        type: string
+    required:
+    - event_id
+    - qr_code
+    type: object
+  eventix-api_internal_models.EventCategory:
+    enum:
+    - music
+    - sports
+    - arts
+    - technology
+    - business
+    - education
+    - other
+    type: string
+    x-enum-varnames:
+    - CategoryMusic
+    - CategorySports
+    - CategoryArts
+    - CategoryTechnology
+    - CategoryBusiness
+    - CategoryEducation
+    - CategoryOther
+  eventix-api_internal_models.EventStatus:
+    enum:
+    - draft
+    - under_review
+    - published
+    - active
+    - completed
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - EventDraft
+    - EventUnderReview
+    - EventPublished
+    - EventActive
+    - EventCompleted
+    - EventCancelled
+  eventix-api_internal_models.OrderStatus:
+    enum:
+    - pending
+    - paid
+    - failed
+    - cancelled
+    - refunded
+    type: string
+    x-enum-varnames:
+    - OrderPending
+    - OrderPaid
+    - OrderFailed
+    - OrderCancelled
+    - OrderRefunded
+  eventix-api_internal_models.TicketStatus:
+    enum:
+    - reserved
+    - active
+    - used
+    - cancelled
+    - refunded
+    type: string
+    x-enum-varnames:
+    - TicketReserved
+    - TicketActive
+    - TicketUsed
+    - TicketCancelled
+    - TicketRefunded
 host: localhost:8080
 info:
   contact:
@@ -26,15 +310,6 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  revenue:
-                    type: number
-                  total_events:
-                    type: integer
-                  total_tickets_sold:
-                    type: integer
-                  total_users:
-                    type: integer
                 type: object
               success:
                 type: boolean
@@ -68,7 +343,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Get admin statistics
       tags:
       - Admin
@@ -83,12 +358,7 @@ paths:
         name: credentials
         required: true
         schema:
-          properties:
-            email:
-              type: string
-            password:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.LoginRequest'
       produces:
       - application/json
       responses:
@@ -97,14 +367,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  access_token:
-                    type: string
-                  expires_at:
-                    type: integer
-                  refresh_token:
-                    type: string
-                type: object
+                $ref: '#/definitions/cmd_api.TokenResponse'
               success:
                 type: boolean
             type: object
@@ -150,10 +413,7 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            refresh_token:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -165,8 +425,10 @@ paths:
                 properties:
                   access_token:
                     type: string
-                  expires_at:
+                  expires_in:
                     type: integer
+                  token_type:
+                    type: string
                 type: object
               success:
                 type: boolean
@@ -199,16 +461,7 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            email:
-              type: string
-            first_name:
-              type: string
-            last_name:
-              type: string
-            password:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -217,12 +470,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  email:
-                    type: string
-                  user_id:
-                    type: string
-                type: object
+                $ref: '#/definitions/cmd_api.UserResponse'
               message:
                 type: string
               success:
@@ -270,12 +518,7 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            event_id:
-              type: string
-            qr_code:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.ValidateQRRequest'
       produces:
       - application/json
       responses:
@@ -284,11 +527,6 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  status:
-                    type: string
-                  ticket_id:
-                    type: string
                 type: object
               message:
                 type: string
@@ -338,7 +576,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Validate QR code
       tags:
       - Check-in
@@ -362,6 +600,10 @@ paths:
         in: query
         name: category
         type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -370,6 +612,8 @@ paths:
           schema:
             properties:
               data:
+                items:
+                  $ref: '#/definitions/cmd_api.EventResponse'
                 type: array
               pagination:
                 properties:
@@ -377,7 +621,7 @@ paths:
                     type: integer
                   page:
                     type: integer
-                  total_items:
+                  total:
                     type: integer
                 type: object
               success:
@@ -396,20 +640,7 @@ paths:
         name: event
         required: true
         schema:
-          properties:
-            category:
-              type: string
-            description:
-              type: string
-            end_time:
-              type: string
-            location:
-              type: string
-            start_time:
-              type: string
-            title:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.CreateEventRequest'
       produces:
       - application/json
       responses:
@@ -418,12 +649,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  id:
-                    type: string
-                  title:
-                    type: string
-                type: object
+                $ref: '#/definitions/cmd_api.EventResponse'
               message:
                 type: string
               success:
@@ -472,7 +698,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Create a new event
       tags:
       - Events
@@ -495,20 +721,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  category:
-                    type: string
-                  description:
-                    type: string
-                  id:
-                    type: string
-                  start_time:
-                    type: string
-                  status:
-                    type: string
-                  title:
-                    type: string
-                type: object
+                $ref: '#/definitions/cmd_api.EventResponse'
               success:
                 type: boolean
             type: object
@@ -540,10 +753,7 @@ paths:
         name: order
         required: true
         schema:
-          properties:
-            reservation_id:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.CreateOrderRequest'
       produces:
       - application/json
       responses:
@@ -552,14 +762,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  order_id:
-                    type: string
-                  payment_url:
-                    type: string
-                  total_amount:
-                    type: number
-                type: object
+                $ref: '#/definitions/cmd_api.OrderResponse'
               message:
                 type: string
               success:
@@ -594,7 +797,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Create an order
       tags:
       - Orders
@@ -611,6 +814,8 @@ paths:
           schema:
             properties:
               data:
+                items:
+                  $ref: '#/definitions/cmd_api.OrderResponse'
                 type: array
               success:
                 type: boolean
@@ -630,7 +835,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Get user's orders
       tags:
       - Orders
@@ -647,6 +852,8 @@ paths:
           schema:
             properties:
               data:
+                items:
+                  $ref: '#/definitions/cmd_api.TicketResponse'
                 type: array
               success:
                 type: boolean
@@ -666,7 +873,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Get user's tickets
       tags:
       - Tickets
@@ -681,12 +888,7 @@ paths:
         name: request
         required: true
         schema:
-          properties:
-            quantity:
-              type: integer
-            tier_id:
-              type: string
-          type: object
+          $ref: '#/definitions/cmd_api.ReserveTicketRequest'
       produces:
       - application/json
       responses:
@@ -735,7 +937,7 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Reserve a ticket
       tags:
       - Tickets
@@ -752,18 +954,7 @@ paths:
           schema:
             properties:
               data:
-                properties:
-                  email:
-                    type: string
-                  first_name:
-                    type: string
-                  id:
-                    type: string
-                  last_name:
-                    type: string
-                  role:
-                    type: string
-                type: object
+                $ref: '#/definitions/cmd_api.UserResponse'
               success:
                 type: boolean
             type: object
@@ -782,14 +973,16 @@ paths:
                 type: boolean
             type: object
       security:
-      - BearerAuth: []
+      - OAuth2Password: []
       summary: Get current user profile
       tags:
       - Users
 securityDefinitions:
-  BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
-    in: header
-    name: Authorization
-    type: apiKey
+  OAuth2Password:
+    flow: password
+    scopes:
+      read: Grants read access
+      write: Grants write access
+    tokenUrl: /api/v1/auth/login
+    type: oauth2
 swagger: "2.0"

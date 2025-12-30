@@ -36,10 +36,10 @@ import (
 // @host localhost:8080
 // @BasePath /api/v1
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @securityDefinitions.oauth2.password OAuth2Password
+// @tokenUrl /api/v1/auth/login
+// @scope.write Grants write access
+// @scope.read Grants read access
 
 func main() {
 	// Load configuration
@@ -86,6 +86,22 @@ func main() {
 	app.Use(middleware.Logger())
 	app.Use(middleware.CORS(&cfg.CORS))
 	app.Use(middleware.RateLimiter(&cfg.Limits))
+
+	// API info endpoint at root
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"name":        cfg.App.Name,
+			"version":     cfg.App.Version,
+			"environment": cfg.App.Environment,
+			"description": "Production-grade ticket booking system API for events, organizers, and attendees",
+			"links": fiber.Map{
+				"health":        fmt.Sprintf("http://%s/health", c.Hostname()),
+				"documentation": fmt.Sprintf("http://%s/swagger/index.html", c.Hostname()),
+				"api_base":      fmt.Sprintf("http://%s/api/%s", c.Hostname(), cfg.App.Version),
+			},
+			"status": "running",
+		})
+	})
 
 	// Swagger documentation endpoint
 	app.Get("/swagger/*", swagger.HandlerDefault)
